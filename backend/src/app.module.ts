@@ -7,6 +7,7 @@ import { UserModule } from './domain/user/user.module';
 import { CollectionModule } from './domain/collection/collection.module';
 import { ImportJobModule } from './domain/import/import-job.module';
 import { AuthModule } from './domain/auth/auth.module';
+import { ScryfallDomainModule } from './domain/scryfall/scryfall.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { AuthModule } from './domain/auth/auth.module';
     CollectionModule,
     ImportJobModule,
     AuthModule,
+    ScryfallDomainModule,
   ],
   controllers: [AppController],
   providers: [AppService],

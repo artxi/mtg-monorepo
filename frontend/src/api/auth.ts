@@ -1,7 +1,7 @@
 // src/api/auth.ts
 // Handles authentication API requests
 
-const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:3000';
+const API_BASE = process.env.REACT_APP_API_URL;
 
 export async function register(email: string, password: string) {
   const res = await fetch(`${API_BASE}/auth/register`, {

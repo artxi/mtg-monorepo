@@ -3,7 +3,7 @@ import { AuthProvider, useAuth } from './auth/AuthContext';
 import LoginForm from './auth/LoginForm';
 import RegisterForm from './auth/RegisterForm';
 import { Navbar } from './components';
-import { ProfilePage } from './pages';
+import { ProfilePage, CollectionPage } from './pages';
 
 function App() {
   const { user } = useAuth();
@@ -36,6 +36,7 @@ function App() {
     else content = null; // No login/register on homepage
   } else {
     if (page === 'profile') content = <ProfilePage />;
+    else if (page === 'collection') content = <CollectionPage />;
     else content = <div style={{ textAlign: 'center', marginTop: 40 }}><h2>Welcome, {user.displayName || user.email}!</h2></div>;
   }
 

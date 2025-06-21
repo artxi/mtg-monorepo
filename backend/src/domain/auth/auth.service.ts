@@ -1,7 +1,7 @@
 import { Injectable, UnauthorizedException, Inject, forwardRef } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from '../user/user.service';
-import { ScryfallService } from '../../services/scryfall.service';
+import { ScryfallService } from '../scryfall/scryfall.service';
 import * as bcrypt from 'bcryptjs';
 
 @Injectable()
@@ -29,7 +29,7 @@ export class AuthService {
   }
 
   // Utility to clean and format card names
-  private formatCardName(cardName: string): string {
+  private static formatCardName(cardName: string): string {
     // Remove anything after /
     cardName = cardName.split('/')[0];
     // Remove special characters except letters and numbers
@@ -43,16 +43,15 @@ export class AuthService {
 
   // Utility to generate a unique display name
   private async generateUniqueDisplayName(base: string, userId?: string): Promise<string> {
-    let number = Math.floor(1000 + Math.random() * 9000).toString();
-    let displayName = `${base}#${number}`;
     let tries = 0;
-    let existing = await this.userService.findByDisplayName(displayName);
-    while (existing && (!userId || String(existing._id) !== String(userId)) && tries < 10) {
-      number = Math.floor(1000 + Math.random() * 9000).toString();
+    let displayName = '';
+    let existing: any = null;
+    do {
+      const number = Math.floor(1000 + Math.random() * 9000).toString();
       displayName = `${base}#${number}`;
       existing = await this.userService.findByDisplayName(displayName);
       tries++;
-    }
+    } while (existing && (!userId || String(existing._id) !== String(userId)) && tries < 10);
     return displayName;
   }
 
@@ -60,7 +59,7 @@ export class AuthService {
     let displayName = data.displayName;
     if (!displayName) {
       let cardName = await this.scryfallService.getRandomCardName();
-      cardName = this.formatCardName(cardName);
+      cardName = AuthService.formatCardName(cardName);
       displayName = await this.generateUniqueDisplayName(cardName);
     }
     const hash = await bcrypt.hash(data.password, 10);
@@ -80,7 +79,7 @@ export class AuthService {
     let newDisplayName: string;
     if (random || !displayName) {
       let cardName = await this.scryfallService.getRandomCardName();
-      cardName = this.formatCardName(cardName);
+      cardName = AuthService.formatCardName(cardName);
       newDisplayName = await this.generateUniqueDisplayName(cardName, userId);
     } else {
       // Parse numeric suffix from current displayName
@@ -132,7 +131,7 @@ export class AuthService {
 
   async generateRandomDisplayName() {
     let cardName = await this.scryfallService.getRandomCardName();
-    cardName = this.formatCardName(cardName);
+    cardName = AuthService.formatCardName(cardName);
     const displayName = await this.generateUniqueDisplayName(cardName);
     return { displayName };
   }

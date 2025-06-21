@@ -5,7 +5,7 @@ import { UserModule } from '../user/user.module';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
-import { ScryfallModule } from '../../services/scryfall.module';
+import { ScryfallDomainModule } from '../scryfall/scryfall.module';
 
 const jwtSecret = process.env.JWT_SECRET;
 if (!jwtSecret) {
@@ -16,7 +16,7 @@ if (!jwtSecret) {
   imports: [
     UserModule,
     PassportModule,
-    ScryfallModule,
+    ScryfallDomainModule,
     JwtModule.register({
       secret: jwtSecret,
       signOptions: { expiresIn: '7d' },

@@ -2,6 +2,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import * as authApi from '../api/auth';
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 interface UserProfile {
   email: string;
   displayName: string;
@@ -33,7 +35,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const fetchProfile = async (jwt: string) => {
-    const res = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/auth/me`, {
+    const res = await fetch(`${API_URL}/auth/me`, {
       headers: { Authorization: `Bearer ${jwt}` },
     });
     if (!res.ok) throw new Error('Failed to fetch profile');
@@ -63,7 +65,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const updateProfile = async (updates: Partial<UserProfile> & { password?: string }) => {
     if (!token) return;
-    const res = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/auth/me`, {
+    const res = await fetch(`${API_URL}/auth/me`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -81,7 +83,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const getRandomDisplayName = async () => {
     if (!token) return '';
-    const res = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/auth/random-display-name`, {
+    const res = await fetch(`${API_URL}/auth/random-display-name`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) return '';

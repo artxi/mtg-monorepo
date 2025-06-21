@@ -48,6 +48,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Get('random-display-name')
   async getRandomDisplayName() {
+    console.log('kk');
     return this.authService.generateRandomDisplayName();
   }
 
