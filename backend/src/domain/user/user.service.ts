@@ -20,4 +20,8 @@ export class UserService {
   async findById(id: string) {
     return this.userModel.findById(id).exec();
   }
+
+  async findByDisplayName(displayName: string) {
+    return this.userModel.findOne({ displayName }).exec();
+  }
 }
