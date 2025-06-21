@@ -6,6 +6,7 @@ import { AppService } from './app.service';
 import { UserModule } from './domain/user/user.module';
 import { CollectionModule } from './domain/collection/collection.module';
 import { ImportJobModule } from './domain/import/import-job.module';
+import { AuthModule } from './domain/auth/auth.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { ImportJobModule } from './domain/import/import-job.module';
     UserModule,
     CollectionModule,
     ImportJobModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
