@@ -17,4 +17,7 @@ export class CreateCollectionCardDto {
   @IsOptional()
   @MaxLength(5)
   language?: string;
+
+  @IsString()
+  finish: string;
 }

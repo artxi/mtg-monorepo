@@ -43,4 +43,16 @@ export class ScryfallService {
     }
     return res.json();
   }
+
+  async getCardById(id: string) {
+    const url = `${this.SCRYFALL_API_BASE}/cards/${id}`;
+    const res = await fetch(url);
+    if (!res.ok) {
+      if (res.status === 404) {
+        throw new NotFoundException('Card not found on Scryfall');
+      }
+      throw new InternalServerErrorException('Failed to fetch card from Scryfall');
+    }
+    return res.json();
+  }
 }

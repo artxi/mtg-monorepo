@@ -19,6 +19,9 @@ export class CollectionCard {
 
   @Prop({ default: 'en' })
   language: string;
+
+  @Prop({ required: true })
+  finish: string;
 }
 
 export const CollectionCardSchema = SchemaFactory.createForClass(CollectionCard);

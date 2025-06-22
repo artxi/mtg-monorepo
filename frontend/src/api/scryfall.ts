@@ -30,3 +30,12 @@ export async function autocompleteScryfallNames(query: string) {
   const data = await res.json();
   return data.data || [];
 }
+
+// Get card image by Scryfall ID
+export async function getCardImage(scryfallId: string): Promise<string | null> {
+  if (!scryfallId) return null;
+  const res = await fetch(`${API_URL}/scryfall/card/${scryfallId}`);
+  if (!res.ok) return null;
+  const card = await res.json();
+  return card.image_uris?.normal || card.image_uris?.small || card.card_faces?.[0]?.image_uris?.normal || null;
+}

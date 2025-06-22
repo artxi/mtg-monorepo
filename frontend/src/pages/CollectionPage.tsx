@@ -2,13 +2,18 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../auth/AuthContext';
 import * as collectionApi from '../api/collection';
 import ScryfallModal from '../components/ScryfallModal';
+import { getCardImage } from '../api/scryfall';
+import CardImage from '../components/CardImage/CardImage';
+import CardDetailsPanel from '../components/CardDetailsPanel/CardDetailsPanel';
 
+// Add finish to CollectionCard type and initialFormState
 export interface CollectionCard {
   _id: string;
   scryfallId: string;
   quantity: number;
   condition: string;
   language: string;
+  finish: string;
 }
 
 const initialFormState = {
@@ -16,6 +21,7 @@ const initialFormState = {
   quantity: 1,
   condition: '',
   language: '',
+  finish: '',
 };
 
 type FormMode = 'add' | 'edit';
@@ -27,7 +33,7 @@ const CollectionPage: React.FC = () => {
   const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [formMode, setFormMode] = useState<FormMode>('add');
-  const [formData, setFormData] = useState<any>(initialFormState);
+  const [, setFormData] = useState<any>(initialFormState);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -36,6 +42,7 @@ const CollectionPage: React.FC = () => {
   const [scryfallLoading, setScryfallLoading] = useState(false);
   const [autocompleteOptions, setAutocompleteOptions] = useState<string[]>([]);
   const [showAutocomplete, setShowAutocomplete] = useState(false);
+  const [duplicateChoice, setDuplicateChoice] = useState<null | { existing: CollectionCard, newData: any }>(null);
   const autocompleteRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -85,41 +92,15 @@ const CollectionPage: React.FC = () => {
 
   const openAddForm = () => {
     setFormMode('add');
-    setFormData(initialFormState);
+    setScryfallQuery(''); // Reset search query when opening modal
     setShowForm(true);
     setSelectedId(null);
   };
 
   const openEditForm = (card: CollectionCard) => {
     setFormMode('edit');
-    setFormData({ ...card });
     setShowForm(true);
     setSelectedId(card._id);
-  };
-
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev: any) => ({ ...prev, [name]: value }));
-  };
-
-  const handleFormSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!token) return;
-    setProcessing(true);
-    try {
-      if (formMode === 'add') {
-        const newCard = await collectionApi.addCollectionCard(token, formData);
-        setCards((prev) => [...prev, newCard]);
-      } else if (formMode === 'edit' && selectedId) {
-        const updated = await collectionApi.updateCollectionCard(token, selectedId, formData);
-        setCards((prev) => prev.map(c => c._id === selectedId ? updated : c));
-      }
-      setShowForm(false);
-    } catch (e: any) {
-      setError(e.message);
-    } finally {
-      setProcessing(false);
-    }
   };
 
   const handleDelete = async () => {
@@ -138,9 +119,47 @@ const CollectionPage: React.FC = () => {
 
   const closeForm = () => {
     setShowForm(false);
-    setScryfallQuery('');
+    setScryfallQuery(''); // Reset search query when closing modal
     setAutocompleteOptions([]);
     setScryfallResults([]);
+  };
+
+  const normalize = (v: string | undefined | null) => (v || '').toLowerCase().trim();
+
+  // Utility to map Scryfall finish codes to user-friendly labels
+  const finishLabels: Record<string, string> = {
+    nonfoil: 'Nonfoil',
+    foil: 'Foil',
+    etched: 'Etched Foil',
+    gilded: 'Gilded Foil',
+    glossy: 'Glossy',
+    matte: 'Matte',
+    "double_rainbow": 'Double Rainbow Foil',
+    "surgefoil": 'Surge Foil',
+    "confetti": 'Confetti Foil',
+    "prerelease": 'Prerelease',
+    "extendedart": 'Extended Art',
+    "showcase": 'Showcase',
+    "borderless": 'Borderless',
+    "retro": 'Retro Frame',
+    "promo": 'Promo',
+    "textured": 'Textured Foil',
+    "shatterfoil": 'Shatter Foil',
+    "rainbow": 'Rainbow Foil',
+    "zfoil": 'Z-Foil',
+    "stepandcomplete": 'Step-and-Complete Foil',
+    "oil": 'Oil Slick',
+    "neon": 'Neon Ink',
+    "fandemonium": 'Fandemonium',
+    "signature": 'Artist Signed',
+    "stamped": 'Gold Stamped',
+    "oversized": 'Oversized',
+    "minigame": 'Minigame',
+    "playtest": 'Playtest',
+    "misprint": 'Misprint',
+    "testprint": 'Test Print',
+    "foilstamp": 'Foil Stamp',
+    "foil_etched": 'Etched Foil',
   };
 
   return (
@@ -157,6 +176,7 @@ const CollectionPage: React.FC = () => {
               <th>Quantity</th>
               <th>Condition</th>
               <th>Language</th>
+              <th>Finish</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -165,11 +185,18 @@ const CollectionPage: React.FC = () => {
               return (
                 <tr key={card._id} style={{ borderBottom: '1px solid #eee' }}>
                   <td>
-                    {card.scryfallId}
+                    {/* Render card image with link to Scryfall page */}
+                    <CardImage
+                      scryfallId={card.scryfallId}
+                      imageUrl={`https://api.scryfall.com/cards/${card.scryfallId}?format=image`}
+                      alt={card.scryfallId}
+                      className="collection-card-image"
+                    />
                   </td>
                   <td>{card.quantity}</td>
                   <td>{card.condition}</td>
                   <td>{card.language}</td>
+                  <td>{finishLabels[card.finish] || (card.finish ? card.finish.charAt(0).toUpperCase() + card.finish.slice(1) : '')}</td>
                   <td>
                     <button onClick={() => openEditForm(card)}>Edit</button>
                     <button onClick={() => setDeleteId(card._id)} style={{ marginLeft: 8 }}>Delete</button>
@@ -190,6 +217,7 @@ const CollectionPage: React.FC = () => {
         scryfallResults={scryfallResults}
         setFormData={setFormData}
         setShowForm={closeForm}
+        collection={cards}
         autocompleteOptions={autocompleteOptions}
         showAutocomplete={showAutocomplete}
         setShowAutocomplete={setShowAutocomplete}
@@ -198,6 +226,36 @@ const CollectionPage: React.FC = () => {
           setScryfallQuery(name);
           setShowAutocomplete(false);
           setAutocompleteOptions([]); // Hide the autocomplete list after selection
+        }}
+        onSubmit={async (modalFormData) => {
+          if (!token) return;
+          setProcessing(true);
+          try {
+            if (formMode === 'add') {
+              // Check for duplicate
+              const match = cards.find(card =>
+                card.scryfallId === modalFormData.scryfallId &&
+                normalize(card.language) === normalize(modalFormData.language) &&
+                normalize(card.finish) === normalize(modalFormData.finish) &&
+                normalize(card.condition) === normalize(modalFormData.condition)
+              );
+              if (match) {
+                setDuplicateChoice({ existing: match, newData: modalFormData });
+                setProcessing(false);
+                return;
+              }
+              const newCard = await collectionApi.addCollectionCard(token, modalFormData);
+              setCards((prev) => [...prev, newCard]);
+            } else if (formMode === 'edit' && selectedId) {
+              const updated = await collectionApi.updateCollectionCard(token, selectedId, modalFormData);
+              setCards((prev) => prev.map(c => c._id === selectedId ? updated : c));
+            }
+            setShowForm(false);
+          } catch (e: any) {
+            setError(e.message);
+          } finally {
+            setProcessing(false);
+          }
         }}
       />
       {/* Delete Confirmation */}
@@ -208,6 +266,57 @@ const CollectionPage: React.FC = () => {
             <p>Are you sure you want to delete this card?</p>
             <button onClick={handleDelete} disabled={processing}>Delete</button>
             <button onClick={() => setDeleteId(null)} style={{ marginLeft: 8 }}>Cancel</button>
+          </div>
+        </div>
+      )}
+      {/* Duplicate Choice Confirmation */}
+      {duplicateChoice && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: '#0008', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }}>
+          <div style={{ background: '#fff', padding: 32, borderRadius: 10, minWidth: 340, maxWidth: 400 }}>
+            <h3>Duplicate Card Detected</h3>
+            <p>This card already exists in your collection with the same language, finish, and condition.</p>
+            <p>Would you like to update the quantity or add as a separate entry?</p>
+            <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
+              <button
+                onClick={async () => {
+                  if (!token) return;
+                  setProcessing(true);
+                  try {
+                    const updated = await collectionApi.updateCollectionCard(
+                      token,
+                      duplicateChoice.existing._id,
+                      { quantity: duplicateChoice.existing.quantity + (duplicateChoice.newData.quantity || 1) }
+                    );
+                    setCards((prev) => prev.map(c => c._id === updated._id ? updated : c));
+                    setShowForm(false);
+                    setDuplicateChoice(null);
+                  } catch (e: any) {
+                    setError(e.message);
+                  } finally {
+                    setProcessing(false);
+                  }
+                }}
+                disabled={processing}
+              >Update Quantity</button>
+              <button
+                onClick={async () => {
+                  if (!token) return;
+                  setProcessing(true);
+                  try {
+                    const newCard = await collectionApi.addCollectionCard(token, duplicateChoice.newData);
+                    setCards((prev) => [...prev, newCard]);
+                    setShowForm(false);
+                    setDuplicateChoice(null);
+                  } catch (e: any) {
+                    setError(e.message);
+                  } finally {
+                    setProcessing(false);
+                  }
+                }}
+                disabled={processing}
+              >Add as Separate Entry</button>
+              <button onClick={() => setDuplicateChoice(null)} style={{ marginLeft: 8 }}>Cancel</button>
+            </div>
           </div>
         </div>
       )}
