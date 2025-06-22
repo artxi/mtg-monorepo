@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../auth/AuthContext';
 import * as collectionApi from '../api/collection';
-import { searchScryfallCards } from '../api/scryfall';
 import ScryfallModal from '../components/ScryfallModal';
 
 interface CollectionCard {
@@ -39,9 +38,6 @@ const CollectionPage: React.FC = () => {
   const [scryfallResults, setScryfallResults] = useState<any[]>([]);
   const [scryfallQuery, setScryfallQuery] = useState('');
   const [scryfallLoading, setScryfallLoading] = useState(false);
-  const [selectedCard, setSelectedCard] = useState<any>(null); // for version picker step
-  const [versions, setVersions] = useState<any[]>([]);
-  const [versionsLoading, setVersionsLoading] = useState(false);
 
   useEffect(() => {
     if (!token) return;
@@ -63,10 +59,13 @@ const CollectionPage: React.FC = () => {
       return;
     }
     setScryfallLoading(true);
-    const timeout = setTimeout(() => {
-      searchScryfallCards(scryfallQuery).then(setScryfallResults).finally(() => setScryfallLoading(false));
-    }, 400);
-    return () => clearTimeout(timeout);
+    import('../api/scryfall').then(api => {
+      api.searchScryfallCards(scryfallQuery)
+        .then((results: any[]) => {
+          setScryfallResults(results);
+        })
+        .finally(() => setScryfallLoading(false));
+    });
   }, [scryfallQuery, showForm, formMode]);
 
   const openAddForm = () => {
@@ -122,28 +121,6 @@ const CollectionPage: React.FC = () => {
     }
   };
 
-  // Step 1: Show unique card names in search
-  const uniqueCardResults = React.useMemo(() => {
-    const seen = new Set();
-    return scryfallResults.filter(card => {
-      if (seen.has(card.name)) return false;
-      seen.add(card.name);
-      return true;
-    });
-  }, [scryfallResults]);
-
-  // Step 2: When a card is selected, fetch all printings/versions
-  useEffect(() => {
-    if (!selectedCard) return;
-    setVersionsLoading(true);
-    // Use backend proxy for prints
-    import('../api/scryfall').then(api => {
-      api.getScryfallPrints(selectedCard.id)
-        .then(setVersions)
-        .finally(() => setVersionsLoading(false));
-    });
-  }, [selectedCard]);
-
   return (
     <div style={{ maxWidth: 900, margin: '2rem auto' }}>
       <h2>Your Collection</h2>
@@ -192,13 +169,8 @@ const CollectionPage: React.FC = () => {
         scryfallQuery={scryfallQuery}
         setScryfallQuery={setScryfallQuery}
         scryfallLoading={scryfallLoading}
-        uniqueCardResults={uniqueCardResults}
-        selectedCard={selectedCard}
-        setSelectedCard={setSelectedCard}
-        versions={versions}
-        versionsLoading={versionsLoading}
+        scryfallResults={scryfallResults}
         setFormData={setFormData}
-        setScryfallResults={setScryfallResults}
         setShowForm={setShowForm}
       />
       {/* Delete Confirmation */}

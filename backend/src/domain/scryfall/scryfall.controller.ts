@@ -9,9 +9,4 @@ export class ScryfallController {
   async search(@Query('text') text: string) {
     return this.scryfallService.search(text);
   }
-
-  @Get('prints')
-  async prints(@Query('id') id: string) {
-    return this.scryfallService.getPrints(id);
-  }
 }

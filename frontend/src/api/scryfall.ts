@@ -1,4 +1,4 @@
-// Proxy Scryfall search and prints endpoints to backend
+// Proxy Scryfall search endpoint to backend
 
 const API_URL = process.env.REACT_APP_API_URL!;
 
@@ -14,18 +14,9 @@ export async function searchScryfallCards(query: string) {
   return data.data.map((card: any) => ({
     id: card.id,
     name: card.name,
-    image: card.image_uris?.small || card.card_faces?.[0]?.image_uris?.small || '',
+    image: card.image_uris?.normal || card.image_uris?.small || card.card_faces?.[0]?.image_uris?.normal || '',
     set: card.set_name,
     lang: card.lang,
     ...card,
   }));
-}
-
-// Fetch prints for a card by Scryfall ID
-export async function getScryfallPrints(id: string) {
-  if (!id) return [];
-  const res = await fetch(`${API_URL}/scryfall/prints?id=${encodeURIComponent(id)}`);
-  if (!res.ok) return [];
-  const data = await res.json();
-  return data.data || [];
 }

@@ -8,10 +8,15 @@ export class ScryfallService {
 
   async getRandomCardName(): Promise<string> {
     try {
-      const url = this.SCRYFALL_API_BASE + '/cards/random';
+      const url = `${this.SCRYFALL_API_BASE}/cards/random`;
       const res = await fetch(url);
-      if (!res.ok) throw new Error('Failed to fetch from Scryfall');
+      if (!res.ok) {
+        throw new InternalServerErrorException('Failed to fetch random card from Scryfall');
+      }
       const data = await res.json();
+      if (!data.name) {
+        throw new InternalServerErrorException('Scryfall response missing card name');
+      }
       return data.name as string;
     } catch (err) {
       throw new InternalServerErrorException('Could not fetch random card name from Scryfall');
@@ -20,26 +25,19 @@ export class ScryfallService {
 
   async search(text: string) {
     try {
-      // Accept the raw text input and build the Scryfall query
-      const url = `${this.SCRYFALL_API_BASE}/cards/search?q=${encodeURIComponent(text)}`;
+      const url = `${this.SCRYFALL_API_BASE}/cards/search?q=${encodeURIComponent(text)}&unique=prints`;
       const res = await fetch(url);
-      if (!res.ok) throw new Error('Failed to fetch from Scryfall');
+      if (!res.ok) {
+        // Scryfall returns 404 for no results, but that's not a server error
+        if (res.status === 404) {
+          return { data: [], object: 'list', total_cards: 0 };
+        }
+        throw new InternalServerErrorException('Failed to fetch from Scryfall');
+      }
       const data = await res.json();
       return data;
     } catch (err) {
       throw new InternalServerErrorException('Could not search Scryfall');
-    }
-  }
-
-  async getPrints(id: string) {
-    try {
-      const url = `${this.SCRYFALL_API_BASE}/cards/${id}/prints`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error('Failed to fetch from Scryfall');
-      const data = await res.json();
-      return data;
-    } catch (err) {
-      throw new InternalServerErrorException('Could not fetch Scryfall prints');
     }
   }
 }
