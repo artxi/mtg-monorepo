@@ -19,12 +19,6 @@ export class CollectionCard {
 
   @Prop({ default: 'en' })
   language: string;
-
-  @Prop()
-  location?: string;
-
-  @Prop()
-  notes?: string;
 }
 
 export const CollectionCardSchema = SchemaFactory.createForClass(CollectionCard);

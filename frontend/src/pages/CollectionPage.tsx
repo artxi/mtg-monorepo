@@ -3,14 +3,12 @@ import { useAuth } from '../auth/AuthContext';
 import * as collectionApi from '../api/collection';
 import ScryfallModal from '../components/ScryfallModal';
 
-interface CollectionCard {
+export interface CollectionCard {
   _id: string;
   scryfallId: string;
   quantity: number;
   condition: string;
   language: string;
-  location?: string;
-  notes?: string;
 }
 
 const initialFormState = {
@@ -18,8 +16,6 @@ const initialFormState = {
   quantity: 1,
   condition: '',
   language: '',
-  location: '',
-  notes: '',
 };
 
 type FormMode = 'add' | 'edit';
@@ -161,8 +157,6 @@ const CollectionPage: React.FC = () => {
               <th>Quantity</th>
               <th>Condition</th>
               <th>Language</th>
-              <th>Location</th>
-              <th>Notes</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -176,8 +170,6 @@ const CollectionPage: React.FC = () => {
                   <td>{card.quantity}</td>
                   <td>{card.condition}</td>
                   <td>{card.language}</td>
-                  <td>{card.location || ''}</td>
-                  <td>{card.notes || ''}</td>
                   <td>
                     <button onClick={() => openEditForm(card)}>Edit</button>
                     <button onClick={() => setDeleteId(card._id)} style={{ marginLeft: 8 }}>Delete</button>
