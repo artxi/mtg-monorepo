@@ -22,6 +22,15 @@ export class ScryfallService {
     return data.name as string;
   }
 
+  async autocomplete(query: string) {
+    const url = `${this.SCRYFALL_API_BASE}/cards/autocomplete?q=${encodeURIComponent(query)}`;
+    const res = await fetch(url);
+    if (!res.ok) {
+      throw new InternalServerErrorException('Failed to fetch autocomplete from Scryfall');
+    }
+    return res.json();
+  }
+
   async search(text: string) {
     const url = `${this.SCRYFALL_API_BASE}/cards/search?q=${encodeURIComponent(text)}&unique=prints`;
     const res = await fetch(url);

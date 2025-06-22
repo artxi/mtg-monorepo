@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../auth/AuthContext';
 import * as collectionApi from '../api/collection';
 import ScryfallModal from '../components/ScryfallModal';
@@ -38,6 +38,9 @@ const CollectionPage: React.FC = () => {
   const [scryfallResults, setScryfallResults] = useState<any[]>([]);
   const [scryfallQuery, setScryfallQuery] = useState('');
   const [scryfallLoading, setScryfallLoading] = useState(false);
+  const [autocompleteOptions, setAutocompleteOptions] = useState<string[]>([]);
+  const [showAutocomplete, setShowAutocomplete] = useState(false);
+  const autocompleteRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!token) return;
@@ -48,13 +51,29 @@ const CollectionPage: React.FC = () => {
       .finally(() => setLoading(false));
   }, [token]);
 
-  // Scryfall search effect (debounced)
+  // Scryfall autocomplete effect (debounced)
+  useEffect(() => {
+    if (!showForm || !scryfallQuery) {
+      setAutocompleteOptions([]);
+      setShowAutocomplete(false);
+      return;
+    }
+    setShowAutocomplete(true);
+    import('../api/scryfall').then(api => {
+      api.autocompleteScryfallNames(scryfallQuery)
+        .then((options: string[]) => {
+          setAutocompleteOptions(options);
+        });
+    });
+  }, [scryfallQuery, showForm]);
+
+  // Scryfall search effect (only after autocomplete selection)
   useEffect(() => {
     if (formMode !== 'add' && formMode !== 'edit') {
       setScryfallResults([]);
       return;
     }
-    if (!showForm || !scryfallQuery) {
+    if (!showForm || !scryfallQuery || showAutocomplete) {
       setScryfallResults([]);
       return;
     }
@@ -66,7 +85,7 @@ const CollectionPage: React.FC = () => {
         })
         .finally(() => setScryfallLoading(false));
     });
-  }, [scryfallQuery, showForm, formMode]);
+  }, [scryfallQuery, showForm, formMode, showAutocomplete]);
 
   const openAddForm = () => {
     setFormMode('add');
@@ -121,6 +140,13 @@ const CollectionPage: React.FC = () => {
     }
   };
 
+  const closeForm = () => {
+    setShowForm(false);
+    setScryfallQuery('');
+    setAutocompleteOptions([]);
+    setScryfallResults([]);
+  };
+
   return (
     <div style={{ maxWidth: 900, margin: '2rem auto' }}>
       <h2>Your Collection</h2>
@@ -171,7 +197,16 @@ const CollectionPage: React.FC = () => {
         scryfallLoading={scryfallLoading}
         scryfallResults={scryfallResults}
         setFormData={setFormData}
-        setShowForm={setShowForm}
+        setShowForm={closeForm}
+        autocompleteOptions={autocompleteOptions}
+        showAutocomplete={showAutocomplete}
+        setShowAutocomplete={setShowAutocomplete}
+        autocompleteRef={autocompleteRef as React.RefObject<HTMLDivElement>}
+        onAutocompleteSelect={name => {
+          setScryfallQuery(name);
+          setShowAutocomplete(false);
+          setAutocompleteOptions([]); // Hide the autocomplete list after selection
+        }}
       />
       {/* Delete Confirmation */}
       {deleteId && (

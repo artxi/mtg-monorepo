@@ -5,6 +5,11 @@ import { ScryfallService } from './scryfall.service';
 export class ScryfallController {
   constructor(private readonly scryfallService: ScryfallService) {}
 
+  @Get('autocomplete')
+  async autocomplete(@Query('q') q: string) {
+    return this.scryfallService.autocomplete(q);
+  }
+
   @Get('search')
   async search(@Query('text') text: string) {
     return this.scryfallService.search(text);

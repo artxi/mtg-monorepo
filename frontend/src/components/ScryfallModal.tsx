@@ -9,6 +9,11 @@ interface ScryfallModalProps {
   scryfallResults: any[];
   setFormData: (fn: (prev: any) => any) => void;
   setShowForm: (show: boolean) => void;
+  autocompleteOptions?: string[];
+  showAutocomplete?: boolean;
+  setShowAutocomplete?: (show: boolean) => void;
+  autocompleteRef?: React.RefObject<HTMLDivElement>;
+  onAutocompleteSelect?: (name: string) => void;
 }
 
 const ScryfallModal: React.FC<ScryfallModalProps> = ({
@@ -20,23 +25,53 @@ const ScryfallModal: React.FC<ScryfallModalProps> = ({
   scryfallResults,
   setFormData,
   setShowForm,
+  autocompleteOptions = [],
+  showAutocomplete = false,
+  setShowAutocomplete = () => {},
+  autocompleteRef,
+  onAutocompleteSelect = () => {},
 }) => {
   if (!show) return null;
+
+  // Hide autocomplete immediately on click (before React event batching)
+  const handleAutocompleteClick = (name: string) => {
+    if (onAutocompleteSelect) onAutocompleteSelect(name);
+    setShowAutocomplete(false);
+    setTimeout(() => setShowAutocomplete(false), 0); // Defensive: ensure it closes even if parent state lags
+  };
+
   return (
     <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: '#0008', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-      <form onSubmit={e => e.preventDefault()} style={{ background: '#fff', padding: 32, borderRadius: 12, minWidth: 600, maxWidth: 900, width: '90vw', boxShadow: '0 4px 32px #0003', maxHeight: '90vh', overflowY: 'auto' }}>
+      <form onSubmit={e => e.preventDefault()} style={{ background: '#fff', padding: 32, borderRadius: 12, width: 800, height: 700, boxShadow: '0 4px 32px #0003', display: 'flex', flexDirection: 'column', maxWidth: '90vw', maxHeight: '90vh', overflow: 'hidden' }}>
         <h2 style={{ marginTop: 0 }}>{formMode === 'add' ? 'Add Card' : 'Edit Card'}</h2>
-        <div>
+        <div style={{ position: 'relative' }}>
           <label style={{ fontWeight: 500, fontSize: 18 }}>Card Search<br />
             <input
               type="text"
               value={scryfallQuery}
-              onChange={e => setScryfallQuery(e.target.value)}
+              onChange={e => {
+                setScryfallQuery(e.target.value);
+                setShowAutocomplete(true);
+              }}
               placeholder="Search Scryfall..."
               style={{ width: '100%', fontSize: 18, padding: 8, marginTop: 4, marginBottom: 12, borderRadius: 4, border: '1px solid #ccc' }}
               autoFocus
+              autoComplete="off"
             />
           </label>
+          {showAutocomplete && autocompleteOptions.length > 0 && (
+            <div ref={autocompleteRef} style={{ position: 'absolute', left: 0, right: 0, top: 56, background: '#fff', border: '1px solid #ccc', borderRadius: 4, zIndex: 10, maxHeight: 240, overflowY: 'auto', boxShadow: '0 2px 12px #0002' }}>
+              {autocompleteOptions.map((name, idx) => (
+                <div
+                  key={name + idx}
+                  style={{ padding: '8px 16px', cursor: 'pointer', fontSize: 16, borderBottom: idx !== autocompleteOptions.length - 1 ? '1px solid #eee' : undefined }}
+                  onMouseDown={e => { e.preventDefault(); handleAutocompleteClick(name); }}
+                >
+                  {name}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
         {scryfallLoading && <div style={{ margin: '12px 0', fontSize: 18 }}>Searching...</div>}
         {scryfallResults.length > 0 && (

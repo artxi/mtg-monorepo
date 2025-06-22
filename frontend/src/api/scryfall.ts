@@ -20,3 +20,13 @@ export async function searchScryfallCards(query: string) {
     ...card,
   }));
 }
+
+// Scryfall API autocomplete utility
+// Returns a promise of an array of card name strings
+export async function autocompleteScryfallNames(query: string) {
+  if (!query) return [];
+  const res = await fetch(`${API_URL}/scryfall/autocomplete?q=${encodeURIComponent(query)}`);
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.data || [];
+}
